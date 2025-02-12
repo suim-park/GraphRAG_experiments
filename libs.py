@@ -3,7 +3,7 @@ functions for the graph RAG module."""
 
 from sentence_transformers import SentenceTransformer
 import ollama
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 import os
 import ast
@@ -244,15 +244,24 @@ def generate_response(graph, query, method="hybrid", model="gpt-4-turbo"):
     """
 
     # response = ollama.generate(model="llama3.1:latest", prompt=prompt)
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": query},
-        ],
-    )
-    return response, context
+    # Initialize the client
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    
+    # Assuming 'prompt' is defined elsewhere in your code
+    # If not, you'll need to define it
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": prompt},  # Make sure 'prompt' is defined
+                {"role": "user", "content": query},
+            ]
+        )
+        return response, context  # Make sure 'context' is defined
+        
+    except Exception as e:
+        print(f"Error during API call: {e}")
+        return None, None
 
 
 def run_trial(graph, question_list, num_trials=1):
