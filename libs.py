@@ -1,16 +1,12 @@
-"""This is a library module for graph RAG which will contain helper
+"""This is a library module for graph RAG which will contain helper 
 functions for the graph RAG module."""
 
 from sentence_transformers import SentenceTransformer
-
-# import ollama
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
 import ast
 import pandas as pd
-
-# import numpy as np
 from typing import Tuple, List
 
 
@@ -41,24 +37,20 @@ def create_vector_index(graph, name):
     Returns:
       None
     """
-    # Check if the index exists and retrieve dimensions
+     # Check if the index exists and retrieve dimensions
     existing_indexes = graph.query(
         f"SHOW INDEXES YIELD name, type, options WHERE name = '{name}' AND type = 'VECTOR'"
     )
 
     if existing_indexes:
-        current_options = existing_indexes[0]["options"]
-        current_dimensions = current_options.get("vector.dimensions", None)
+        current_options = existing_indexes[0]['options']
+        current_dimensions = current_options.get('vector.dimensions', None)
 
-        if current_dimensions == 38:
-            print(
-                f"✅ Index '{name}' already exists with correct dimensions: {current_dimensions}"
-            )
+        if current_dimensions == 384:
+            print(f"✅ Index '{name}' already exists with correct dimensions: {current_dimensions}")
             return  # No need to drop and recreate
 
-        print(
-            f"Index '{name}' exists but has incorrect dimensions: {current_dimensions}. Recreating..."
-        )
+        print(f"Index '{name}' exists but has incorrect dimensions: {current_dimensions}. Recreating...")
         graph.query(f"DROP INDEX `{name}` IF EXISTS")
 
     graph.query(f"DROP INDEX `{name}` IF EXISTS")
@@ -123,11 +115,11 @@ def get_entities(prompt: str, correction_context: str = " ") -> Tuple[List[str],
     """
     Extract medical entities from text using OpenAI's models.
     API key is loaded from .env file.
-
+    
     Args:
         prompt: Input text to extract entities from
         correction_context: Additional context for correction if needed
-
+        
     Returns:
         Tuple containing list of extracted entities and correction context
     """
@@ -135,9 +127,9 @@ def get_entities(prompt: str, correction_context: str = " ") -> Tuple[List[str],
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise ValueError("OPENAI_API_KEY not found in .env file")
-
+    
     client = OpenAI(api_key=api_key)
-
+    
     system_prompt = """
     You are a highly capable natural language processing assistant with extensive medical knowledge. 
     Your task is to extract medical entities from a given prompt. 
@@ -145,44 +137,37 @@ def get_entities(prompt: str, correction_context: str = " ") -> Tuple[List[str],
     Please output the entities as a list of strings in the format ["string 1", "string 2"]. Do not include duplicates. 
     Do not include any other text. Always include at least one entity.
     """
-
+    
     try:
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": correction_context},
-                {
-                    "role": "user",
-                    "content": f"Here is the input prompt:\n{prompt}\n\nExtracted entities:",
-                },
+                {"role": "user", "content": f"Here is the input prompt:\n{prompt}\n\nExtracted entities:"}
             ],
-            temperature=0.1,
+            temperature=0.1
         )
-
+        
         output = response.choices[0].message.content.strip()
-
+        
         try:
             entities = ast.literal_eval(output)
             if not isinstance(entities, list):
                 correction_string = f"The previous output threw this error: Expected a list of strings, but got {type(entities)} with value {entities}"
                 return get_entities(prompt, correction_context=correction_string)
-
+            
             if not all(isinstance(item, str) for item in entities):
-                correction_string = (
-                    f"The previous output contained non-string elements: {entities}"
-                )
+                correction_string = f"The previous output contained non-string elements: {entities}"
                 return get_entities(prompt, correction_context=correction_string)
-
+            
             return entities, correction_context
-
+            
         except (ValueError, SyntaxError) as e:
             print(f"Error parsing response: {e}")
             print(f"Raw response was: {output}")
-            return get_entities(
-                prompt, correction_context=f"Previous response was invalid: {e}"
-            )
-
+            return get_entities(prompt, correction_context=f"Previous response was invalid: {e}")
+            
     except Exception as e:
         print(f"API Error: {e}")
         return ["error occurred"], correction_context
@@ -292,7 +277,7 @@ def generate_response(graph, query, method="hybrid", model="gpt-4-turbo"):
     ### Instructions:
     - Search the knowledge base and return **only the names of the most relevant documents**.
     - The output must be in one of the following structured formats:
-    - **List Format**: ["ARDS.pdf", "ACURASYS.pdf"]
+    - **List Format**: ["ARDS", "ACURASYS"]
     - **Do not provide any explanations or additional text.** Output only the document names.
     - If no document is relevant, return an **empty list**: `[]`.
     
@@ -303,7 +288,7 @@ def generate_response(graph, query, method="hybrid", model="gpt-4-turbo"):
     # response = ollama.generate(model="llama3.1:latest", prompt=prompt)
     # Initialize the client
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
+    
     # Assuming 'prompt' is defined elsewhere in your code
     # If not, you'll need to define it
     try:
@@ -312,15 +297,16 @@ def generate_response(graph, query, method="hybrid", model="gpt-4-turbo"):
             messages=[
                 {"role": "system", "content": prompt},  # Make sure 'prompt' is defined
                 {"role": "user", "content": query},
-            ],
+            ]
         )
         return response, context  # Make sure 'context' is defined
-
+        
     except Exception as e:
         print(f"Error during API call: {e}")
         return None, None
 
-    # def run_trial(graph, question_list, num_trials=1):
+
+#def run_trial(graph, question_list, num_trials=1):
     """
     This function will run a trial of questions and return the results
 
@@ -360,7 +346,8 @@ def generate_response(graph, query, method="hybrid", model="gpt-4-turbo"):
     )
     return results
 
-    # def create_md(csv_path, output_path, questions):
+
+#def create_md(csv_path, output_path, questions):
     """
     This function will convert a trial csv into md for evaluation
 
