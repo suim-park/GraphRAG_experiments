@@ -178,7 +178,7 @@ def graph_retriever(graph, query):
     ids = []
     for entity in entities:
         embedding = embed_entity(entity)
-        closest_node = vector_search(graph, embedding, k=1)
+        closest_node = vector_search(graph, embedding, k=1) # considering only the closest node
         id = closest_node[0]["node.id"]
         ids.append(id)
     context = ""
@@ -277,7 +277,7 @@ def generate_response(graph, query, method="hybrid", model="gpt-4-turbo"):
     ### Instructions:
     - Search the knowledge base and return **only the names of the most relevant documents**.
     - The output must be in one of the following structured formats:
-    - **List Format**: ["ARDS", "ACURASYS"]
+    - **Format**: "ARDS", "ACURASYS"
     - **Do not provide any explanations or additional text.** Output only the document names.
     - If no document is relevant, return an **empty list**: `[]`.
     

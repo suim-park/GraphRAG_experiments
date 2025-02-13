@@ -24,3 +24,5 @@ langchain-openai
 langchain_core
 gspread
 oauth2client
+nltk
+rouge_score

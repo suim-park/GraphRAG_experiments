@@ -1,31 +1,31 @@
 ,Question,Docs
-0,Relevace Q1,"{'ROSE', 'ACURASYS'}"
-1,Relevace Q2,"{'ROSE', 'ACURASYS'}"
-2,Relevace Q3,{'ROSE'}
-3,Relevace Q4,{'ROSE'}
-4,Relevace Q5,{'FACTT'}
-5,Relevace Q6,{'FACTT'}
-6,Relevace Q7,{'ARDSNet'}
-7,Relevace Q8,{'ARDSNet'}
-8,Relevace Q9,{'PROSEVA'}
-9,Relevace Q10,{'OSCILLATE'}
-10,Relevace Q11,"{'APPROCCHSS', 'CORTICUS', 'ANNANE', 'ADRENAL'}"
-11,Relevace Q12,"{'APPROCCHSS', 'CORTICUS', 'ANNANE', 'ADRENAL'}"
-12,Relevace Q13,"{'APPROCCHSS', 'CORTICUS', 'ANNANE', 'ADRENAL'}"
-13,Relevace Q14,"{'APPROCCHSS', 'CORTICUS', 'ANNANE', 'ADRENAL'}"
-14,Relevace Q15,{'HEAT'}
-15,Relevace Q16,"{'PROWESS', 'PROWESS-SHOCK'}"
-16,Relevace Q17,"{'SAFE', 'ALBIOS'}"
-17,Relevace Q18,"{'SAFE', 'ALBIOS'}"
-18,Relevace Q19,{'ProMISe'}
-19,Relevace Q20,"{'PROWESS', 'PROWESS-SHOCK'}"
-20,Relevace Q21,"{'TTM2', 'TTM'}"
-21,Relevace Q22,"{'TTM2', 'TTM'}"
-22,Relevace Q23,{'HACA'}
-23,Relevace Q24,{'AID-ICU'}
-24,Relevace Q25,{'MIND-USA'}
-25,RelevanceQ26,{'SPICE III'}
-26,RelevanceQ27,{'SPICE III'}
-27,RelevanceQ28,{'SEDCOM'}
-28,RelevanceQ29,{'SEDCOM'}
-29,RelevanceQ30,{'SEDCOM'}
+0,Relevace Q1,"ROSE, ACURASYS"
+1,Relevace Q2,"ROSE, ACURASYS"
+2,Relevace Q3,ROSE
+3,Relevace Q4,ROSE
+4,Relevace Q5,FACTT
+5,Relevace Q6,FACTT
+6,Relevace Q7,ARDSNet
+7,Relevace Q8,ARDSNet
+8,Relevace Q9,PROSEVA
+9,Relevace Q10,OSCILLATE
+10,Relevace Q11,"ANNANE, CORTICUS, APPROCCHSS, ADRENAL"
+11,Relevace Q12,"ANNANE, CORTICUS, APPROCCHSS, ADRENAL"
+12,Relevace Q13,"ANNANE, CORTICUS, APPROCCHSS, ADRENAL"
+13,Relevace Q14,"ANNANE, CORTICUS, APPROCCHSS, ADRENAL"
+14,Relevace Q15,HEAT
+15,Relevace Q16,"PROWESS, PROWESS-SHOCK"
+16,Relevace Q17,"ALBIOS, SAFE"
+17,Relevace Q18,"ALBIOS, SAFE"
+18,Relevace Q19,ProMISe
+19,Relevace Q20,"PROWESS, PROWESS-SHOCK"
+20,Relevace Q21,"TTM, TTM2"
+21,Relevace Q22,"TTM, TTM2"
+22,Relevace Q23,HACA
+23,Relevace Q24,AID-ICU
+24,Relevace Q25,MIND-USA
+25,RelevanceQ26,SPICE III
+26,RelevanceQ27,SPICE III
+27,RelevanceQ28,SEDCOM
+28,RelevanceQ29,SEDCOM
+29,RelevanceQ30,SEDCOM
