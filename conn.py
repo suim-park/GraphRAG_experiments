@@ -1,5 +1,6 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from sklearn.metrics import precision_score, recall_score, accuracy_score
 from dotenv import load_dotenv
 import os
 import pandas as pd
@@ -92,9 +93,36 @@ def get_concatenate_df(results_df, relevant_docs_df, topk):
         # Clean the text
         concatenated_df['Generated Docs'] = concatenated_df['Generated Docs'].apply(clean_text)
         concatenated_df['Relevant Docs'] = concatenated_df['Relevant Docs'].apply(clean_text)
+
+        concatenated_df = concatenated_df[['Question', 'Relevant Docs', 'Generated Docs']]
         
         return concatenated_df
     
     except Exception as e:
         print(f"Error in get_concatenate_df: {e}")
         return pd.DataFrame()  # Return an empty DataFrame in case of error
+    
+    
+# Function to calculate accuracy, precision, and recall
+def calculate_metrics(reference, candidate):
+    reference_tokens = set(reference.split())
+    candidate_tokens = set(candidate.split())
+    
+    true_positives = len(reference_tokens & candidate_tokens)
+    false_positives = len(candidate_tokens - reference_tokens)
+    false_negatives = len(reference_tokens - candidate_tokens)
+    
+    accuracy = true_positives / (true_positives + false_positives + false_negatives)
+    precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0
+    recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
+    
+    return accuracy, precision, recall
+
+def apply_metric(concatenated_df):
+    metrics = concatenated_df.apply(
+        lambda row: calculate_metrics(str(row['Relevant Docs']), str(row['Generated Docs'])), axis=1
+    )
+    concatenated_df['Accuracy'] = metrics.apply(lambda metric: metric[0])
+    concatenated_df['Precision'] = metrics.apply(lambda metric: metric[1])
+    concatenated_df['Recall'] = metrics.apply(lambda metric: metric[2])
+    return concatenated_df
