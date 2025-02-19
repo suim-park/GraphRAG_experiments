@@ -139,3 +139,5 @@ dmypy.json
 
 # credential json file
 reliable-mode-399404-dc4b73f57296.json
+
+outputs/
