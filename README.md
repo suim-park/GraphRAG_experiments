@@ -4,7 +4,7 @@
 
 ## Overview
 
-This project is focused on experiments with Graph-based Retrieval-Augmented Generation (GrapgRAG). It includes various scripts and notebooks for connecting to Google Sheets, interacting with Neo4j, and generating responses using OpenAI's models.
+This project is focused on experiments with Graph-based Retrieval-Augmented Generation (GraphRAG). It includes various scripts and notebooks for connecting to Google Sheets, interacting with Neo4j, and generating responses using OpenAI's models.
 
 ## Features
 
@@ -20,7 +20,7 @@ This project is focused on experiments with Graph-based Retrieval-Augmented Gene
 1. **Clone the repository**:
     ```sh
     git clone https://github.com/BobZhang26/GrapgRAG_experiments.git
-    cd GrapgRAG_experiments
+    cd GraphRAG_experiments
     ```
 
 2. **Create and activate a virtual environment**:
@@ -43,6 +43,16 @@ This project is focused on experiments with Graph-based Retrieval-Augmented Gene
         NEO4J_PASSWORD=your_password
         OPENAI_API_KEY=your_openai_api_key
         ```
+## **Run experiments**!!!
+- `annotation.ipynb` is to get the documents' annoations from the Google sheet. You may start from this one to test if the code is working. 
+
+- `retrieve.ipynb` is the for retrieving the raw contexts from knowledge graph
+
+- `graph_based_rag.ipynb` is the pipeline I built using Langchain framework. This is old so no need to use it. I will use it later for cross-check. 
+
+- `libs.py` contains most functions I build for my own pipeline. 
+
+- `conn.py` contains functions that connects to Google Cloud and new functions for the experiments
 
 ## Usage
 
