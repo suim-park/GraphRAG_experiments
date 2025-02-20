@@ -102,7 +102,7 @@ def chunk_finder(graph, query):
     id = response[0]["node.id"]
 
     chunk_find_query = f"""
-    MATCH (n:Chunk)-[r]->(m:`__Entity__` {{id: "{id}"}}) RETURN n.text,n.fileName LIMIT 8
+    MATCH (n:Chunk)-[r]->(m:`__Entity__` {{id: "{id}"}}) RETURN n.text,n.fileName LIMIT 80
     """
     result = graph.query(chunk_find_query)
     output = []
