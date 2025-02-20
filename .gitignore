@@ -118,6 +118,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.idea/
 
 # Spyder project settings
 .spyderproject
@@ -139,3 +140,5 @@ dmypy.json
 
 # credential json file
 reliable-mode-399404-dc4b73f57296.json
+
+outputs/
