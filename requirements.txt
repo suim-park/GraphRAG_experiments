@@ -26,3 +26,4 @@ gspread
 oauth2client
 nltk
 rouge_score
+logging

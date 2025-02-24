@@ -37,20 +37,24 @@ def create_vector_index(graph, name):
     Returns:
       None
     """
-     # Check if the index exists and retrieve dimensions
+    # Check if the index exists and retrieve dimensions
     existing_indexes = graph.query(
         f"SHOW INDEXES YIELD name, type, options WHERE name = '{name}' AND type = 'VECTOR'"
     )
 
     if existing_indexes:
-        current_options = existing_indexes[0]['options']
-        current_dimensions = current_options.get('vector.dimensions', None)
+        current_options = existing_indexes[0]["options"]
+        current_dimensions = current_options.get("vector.dimensions", None)
 
         if current_dimensions == 384:
-            print(f"✅ Index '{name}' already exists with correct dimensions: {current_dimensions}")
+            print(
+                f"✅ Index '{name}' already exists with correct dimensions: {current_dimensions}"
+            )
             return  # No need to drop and recreate
 
-        print(f"Index '{name}' exists but has incorrect dimensions: {current_dimensions}. Recreating...")
+        print(
+            f"Index '{name}' exists but has incorrect dimensions: {current_dimensions}. Recreating..."
+        )
         graph.query(f"DROP INDEX `{name}` IF EXISTS")
 
     graph.query(f"DROP INDEX `{name}` IF EXISTS")
@@ -108,18 +112,18 @@ def chunk_finder(graph, query):
     output = []
     for record in result:
         output.append((record["n.fileName"], record["n.text"]))
-    return output
+    return output, response
 
 
 def get_entities(prompt: str, correction_context: str = " ") -> Tuple[List[str], str]:
     """
     Extract medical entities from text using OpenAI's models.
     API key is loaded from .env file.
-    
+
     Args:
         prompt: Input text to extract entities from
         correction_context: Additional context for correction if needed
-        
+
     Returns:
         Tuple containing list of extracted entities and correction context
     """
@@ -127,9 +131,9 @@ def get_entities(prompt: str, correction_context: str = " ") -> Tuple[List[str],
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise ValueError("OPENAI_API_KEY not found in .env file")
-    
+
     client = OpenAI(api_key=api_key)
-    
+
     system_prompt = """
     You are a highly capable natural language processing assistant with extensive medical knowledge. 
     Your task is to extract medical entities from a given prompt. 
@@ -137,37 +141,44 @@ def get_entities(prompt: str, correction_context: str = " ") -> Tuple[List[str],
     Please output the entities as a list of strings in the format ["string 1", "string 2"]. Do not include duplicates. 
     Do not include any other text. Always include at least one entity.
     """
-    
+
     try:
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": correction_context},
-                {"role": "user", "content": f"Here is the input prompt:\n{prompt}\n\nExtracted entities:"}
+                {
+                    "role": "user",
+                    "content": f"Here is the input prompt:\n{prompt}\n\nExtracted entities:",
+                },
             ],
-            temperature=0.1
+            temperature=0.1,
         )
-        
+
         output = response.choices[0].message.content.strip()
-        
+
         try:
             entities = ast.literal_eval(output)
             if not isinstance(entities, list):
                 correction_string = f"The previous output threw this error: Expected a list of strings, but got {type(entities)} with value {entities}"
                 return get_entities(prompt, correction_context=correction_string)
-            
+
             if not all(isinstance(item, str) for item in entities):
-                correction_string = f"The previous output contained non-string elements: {entities}"
+                correction_string = (
+                    f"The previous output contained non-string elements: {entities}"
+                )
                 return get_entities(prompt, correction_context=correction_string)
-            
+
             return entities, correction_context
-            
+
         except (ValueError, SyntaxError) as e:
             print(f"Error parsing response: {e}")
             print(f"Raw response was: {output}")
-            return get_entities(prompt, correction_context=f"Previous response was invalid: {e}")
-            
+            return get_entities(
+                prompt, correction_context=f"Previous response was invalid: {e}"
+            )
+
     except Exception as e:
         print(f"API Error: {e}")
         return ["error occurred"], correction_context
@@ -178,7 +189,9 @@ def graph_retriever(graph, query):
     ids = []
     for entity in entities:
         embedding = embed_entity(entity)
-        closest_node = vector_search(graph, embedding, k=1) # considering only the closest node
+        closest_node = vector_search(
+            graph, embedding, k=1
+        )  # considering only the closest node
         id = closest_node[0]["node.id"]
         ids.append(id)
     context = ""
@@ -237,7 +250,7 @@ def context_builder(graph, query, method="hybrid"):
     context = ""
     if method == "vector":
         output = chunk_finder(graph, query)
-        context = "Given the following context in the format [(File Name, Text),...] \n"
+        # context = "Given the following context in the format [(File Name, Text),...] \n"
         context += str(output)
 
     elif method == "graph":
@@ -288,7 +301,7 @@ def generate_response(graph, query, method="hybrid", model="gpt-4-turbo"):
     # response = ollama.generate(model="llama3.1:latest", prompt=prompt)
     # Initialize the client
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    
+
     # Assuming 'prompt' is defined elsewhere in your code
     # If not, you'll need to define it
     try:
@@ -297,16 +310,15 @@ def generate_response(graph, query, method="hybrid", model="gpt-4-turbo"):
             messages=[
                 {"role": "system", "content": prompt},  # Make sure 'prompt' is defined
                 {"role": "user", "content": query},
-            ]
+            ],
         )
         return response, context  # Make sure 'context' is defined
-        
+
     except Exception as e:
         print(f"Error during API call: {e}")
         return None, None
 
-
-#def run_trial(graph, question_list, num_trials=1):
+    # def run_trial(graph, question_list, num_trials=1):
     """
     This function will run a trial of questions and return the results
 
@@ -346,8 +358,7 @@ def generate_response(graph, query, method="hybrid", model="gpt-4-turbo"):
     )
     return results
 
-
-#def create_md(csv_path, output_path, questions):
+    # def create_md(csv_path, output_path, questions):
     """
     This function will convert a trial csv into md for evaluation
 
@@ -378,3 +389,118 @@ def generate_response(graph, query, method="hybrid", model="gpt-4-turbo"):
     # Write the markdown content to a file
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(markdown_content))
+
+
+############################################################################################################
+# NEW CHUNCK FINDER FUNCTIONS
+############################################################################################################
+from typing import List, Tuple, Dict, Optional
+import logging
+
+
+def enhanced_chunk_finder(
+    graph,
+    query: str,
+    limit: int = 8,
+    similarity_threshold: float = 0.8,
+    max_hops: int = 2,
+) -> List[Tuple[str, str, int, int, float]]:
+    try:
+        # Get query embedding and perform vector search
+        query_embedding = embed_entity(query)
+        vector_results = vector_search(graph, query_embedding)
+
+        if not vector_results:
+            logging.warning("No vector search results found for query")
+            return [], []
+
+        # Create a dictionary to store entity IDs and their similarity scores
+        similarity_scores = {
+            result["node.id"]: result["score"]
+            for result in vector_results
+            if result.get("score", 0) >= similarity_threshold
+        }
+
+        if not similarity_scores:
+            logging.info("No results met the similarity threshold")
+            return [], []
+
+        # Construct graph query to find connected chunks
+        ids_clause = ", ".join([f'"{id}"' for id in similarity_scores.keys()])
+        chunk_find_query = f"""
+        MATCH path = (n:Chunk)-[*1..{max_hops}]->(m:`__Entity__`)
+        WHERE m.id IN [{ids_clause}]
+        WITH n, path, m, 
+             CASE 
+                WHEN m.id IN [{ids_clause}] 
+                THEN m.id 
+             END as entity_id
+        WITH n, min(length(path)) as distance, entity_id
+        ORDER BY distance
+        RETURN n.text, n.fileName, n.page_number, n.position, entity_id
+        LIMIT {limit}
+        """
+
+        # Execute graph query
+        result = graph.query(chunk_find_query)
+
+        # Process results
+        output = []
+        seen_chunks = set()
+        filenames = set()
+
+        for record in result:
+            chunk_text = record["n.text"]
+            filenames.add(record["n.fileName"])
+            if chunk_text not in seen_chunks:
+                # Get the similarity score for the entity
+                entity_id = record["entity_id"]
+                similarity_score = similarity_scores.get(entity_id, 0.0)
+
+                output.append(
+                    (
+                        record["n.fileName"],
+                        chunk_text,
+                        record["n.page_number"],
+                        record["n.position"],
+                        similarity_score,
+                    )
+                )
+                seen_chunks.add(chunk_text)
+
+        return list(filenames), output
+
+    except Exception as e:
+        logging.error(f"Error in enhanced_chunk_finder: {str(e)}")
+        raise
+
+
+def get_chunk_metadata(graph, chunk_ids: List[str]) -> Dict[str, Dict]:
+    """
+    Helper function to retrieve additional metadata for chunks.
+
+    Args:
+        graph: The graph database connection
+        chunk_ids: List of chunk IDs to query
+
+    Returns:
+        Dictionary mapping chunk IDs to their metadata
+    """
+    ids_clause = ", ".join([f"'{id}'" for id in chunk_ids])
+    metadata_query = f"""
+    MATCH (n:Chunk)
+    WHERE n.id IN [{ids_clause}]
+    RETURN n.id, n.fileName, n.page_number, n.position
+    """
+
+    result = graph.query(metadata_query)
+
+    metadata = {}
+    for record in result:
+        metadata[record["n.id"]] = {
+            "fileName": record["n.fileName"],
+            "page_number": record["n.page_number"],
+            "position": record["n.position"],
+        }
+
+    return metadata

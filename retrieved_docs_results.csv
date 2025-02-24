@@ -1,6 +1,11 @@
-Question number,Generated Docs
-1,"""ACURASYS"""
-2,"""ACURASYS"""
-3,"""ACURASYS"""
-4,"""ROSE"", ""ACURASYS"""
-5,"""ARDS"", ""ACURASYS"""
+Question number,Question,Retrieved
+1,Does early administration of neuromuscular blocking agents increases the ventilator free days?,"Given the following context in the format [(File Name, Text),...] 
+[('APROCCHSS.pdf', ' experimental interventions were harmonized  across centers according to the 2008 Surviving  Sepsis Campaign guidelines,17 including anti\xad infective treatments, hemodynamic and respira- tory management, and blood glucose control.  Investigators followed national guidelines for the  prevention of superinfection.18 Neuromuscular- blocking agents were discouraged except in the  first 24 hours in the presence of refractory hy- poxemia. Investigators’ adherence to guidelines  was checked at each investigators')]"
+2,Do patients with severe ARDS being treated with neuromuscular blocking agents have increased muscle weakness?,"Given the following context in the format [(File Name, Text),...] 
+[('ROSE.pdf', 'ade (ROSE) trial —  a multicenter, unblinded, randomized trial of  patients with moderate-to-severe ARDS — to  determine the efficacy and safety of early neuro- muscular blockade with concomitant heavy se- dation as compared with a strategy of usual  care with lighter sedation targets. We hypothe- sized that the use of early neuromuscular block- ade would result in lower all-cause in-hospital  mortality at 90 days')]"
+3,"In patients with moderate to severe ARDS, does early use of continuous neuromuscular blockade improve mortality?","Given the following context in the format [(File Name, Text),...] 
+[('ROSE.pdf', 'ade (ROSE) trial —  a multicenter, unblinded, randomized trial of  patients with moderate-to-severe ARDS — to  determine the efficacy and safety of early neuro- muscular blockade with concomitant heavy se- dation as compared with a strategy of usual  care with lighter sedation targets. We hypothe- sized that the use of early neuromuscular block- ade would result in lower all-cause in-hospital  mortality at 90 days')]"
+4,Do patients with moderate-to-severe ARDS have a significance difference in mortality rate beween patients who recieved an early and continous cisatracurium infusion than those with usual care approach with lighter sedation targets?,"Given the following context in the format [(File Name, Text),...] 
+[('ROSE.pdf', 'ade (ROSE) trial —  a multicenter, unblinded, randomized trial of  patients with moderate-to-severe ARDS — to  determine the efficacy and safety of early neuro- muscular blockade with concomitant heavy se- dation as compared with a strategy of usual  care with lighter sedation targets. We hypothe- sized that the use of early neuromuscular block- ade would result in lower all-cause in-hospital  mortality at 90 days')]"
+5,"Among patients with ALI/ARDS, does a conservative fluid management strategy improves lung function and decrease ventilator days compared to liberal strategy?","Given the following context in the format [(File Name, Text),...] 
+[('PROSEVA.pdf', 'The new engl and jour nal of medicine n engl j med 368;23\u2003 nejm.org\u2003 june 6, 2013 2160 P rone positioning has been used for  many years to improve oxygenation in pa- tients who require mechanical ventilatory  support for management of the acute respiratory  distress syndrome (ARDS). Randomized, con- trolled trials have confirmed that oxygenation is  significantly better when patients are in the prone  position than')]"
