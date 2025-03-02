@@ -1,13 +1,13 @@
-"""This is a library module for graph RAG which will contain helper 
+"""This is a library module for graph RAG which will contain helper
 functions for the graph RAG module."""
 
-from sentence_transformers import SentenceTransformer
-from openai import OpenAI
-from dotenv import load_dotenv
+from sentence_transformers import SentenceTransformer  # type: ignore
+from openai import OpenAI  # type: ignore
 import os
 import ast
-import pandas as pd
-from typing import Tuple, List
+import pandas as pd  # type: ignore
+from typing import List, Tuple, Dict, Optional
+import logging
 
 
 def embed_entity(entity):
@@ -44,7 +44,8 @@ def create_vector_index(graph, name):
 
     if existing_indexes:
         current_options = existing_indexes[0]["options"]
-        current_dimensions = current_options.get("vector.dimensions", None)
+        indexConfig = current_options.get("indexConfig", None)
+        current_dimensions = indexConfig.get("vector.dimensions", None)
 
         if current_dimensions == 384:
             print(
@@ -60,12 +61,12 @@ def create_vector_index(graph, name):
     graph.query(f"DROP INDEX `{name}` IF EXISTS")
     graph.query(
         f"""
-    CREATE VECTOR INDEX `{name}`
-    FOR (a:__Entity__) ON (a.embedding)
-    OPTIONS {{
-      indexConfig: {{
-        `vector.dimensions`: 384,
-        `vector.similarity_function`: 'cosine'
+        CREATE VECTOR INDEX `{name}` IF NOT EXISTS  
+        FOR (a:__Entity__) ON (a.embedding)
+        OPTIONS {{
+        indexConfig: {{
+            `vector.dimensions`: 384,
+            `vector.similarity_function`: 'cosine'
       }}
     }}
     """
@@ -86,7 +87,7 @@ def vector_search(graph, query_embedding, index_name="entities", k=50):
       result: list, list of tuples containing the node id and the similarity score
     """
     similarity_query = f"""
-    MATCH (n:`__Entity__`)
+    MATCH (n:__Entity__)
     CALL db.index.vector.queryNodes('{index_name}', {k}, {query_embedding})
     YIELD node, score
     RETURN DISTINCT node.id, score
@@ -394,16 +395,14 @@ def generate_response(graph, query, method="hybrid", model="gpt-4-turbo"):
 ############################################################################################################
 # NEW CHUNCK FINDER FUNCTIONS
 ############################################################################################################
-from typing import List, Tuple, Dict, Optional
-import logging
 
 
 def enhanced_chunk_finder(
     graph,
     query: str,
-    limit: int = 8,
+    limit: int = 20,
     similarity_threshold: float = 0.8,
-    max_hops: int = 2,
+    max_hops: int = 1,
 ) -> List[Tuple[str, str, int, int, float]]:
     try:
         # Get query embedding and perform vector search
@@ -415,36 +414,52 @@ def enhanced_chunk_finder(
             return [], []
 
         # Create a dictionary to store entity IDs and their similarity scores
-        similarity_scores = {
-            result["node.id"]: result["score"]
-            for result in vector_results
-            if result.get("score", 0) >= similarity_threshold
-        }
+        similarity_scores = dict(
+            sorted(
+                {
+                    result["node.id"]: result["score"]
+                    for result in vector_results
+                    if result.get("score", 0) >= similarity_threshold
+                }.items(),
+                key=lambda x: x[1],
+                reverse=True,
+            )
+        )
 
         if not similarity_scores:
             logging.info("No results met the similarity threshold")
             return [], []
 
         # Construct graph query to find connected chunks
-        ids_clause = ", ".join([f'"{id}"' for id in similarity_scores.keys()])
+        # ids_clause = ", ".join([f'"{id}"' for id in similarity_scores.keys()])
+
+        # Create parameters dictionary for the query
+        params = {
+            "similarity_scores": similarity_scores,
+            "ids": list(similarity_scores.keys()),
+            "limit": limit,
+        }
+
+        # Use f-string for max_hops since it can't be parameterized in relationship patterns
         chunk_find_query = f"""
         MATCH path = (n:Chunk)-[*1..{max_hops}]->(m:`__Entity__`)
-        WHERE m.id IN [{ids_clause}]
-        WITH n, path, m, 
+        WHERE m.id IN $ids
+        WITH n, path, m
+        WITH n, min(length(path)) as distance, m
+        WITH n, distance, m.id as entity_id
+        WITH n, distance, entity_id, 
              CASE 
-                WHEN m.id IN [{ids_clause}] 
-                THEN m.id 
-             END as entity_id
-        WITH n, min(length(path)) as distance, entity_id
-        ORDER BY distance
-        RETURN n.text, n.fileName, n.page_number, n.position, entity_id
-        LIMIT {limit}
+                WHEN entity_id IN $ids 
+                THEN $similarity_scores[entity_id]
+             END as similarity
+        ORDER BY similarity DESC, distance
+        RETURN n.text, n.fileName, n.page_number, n.position, entity_id, similarity
+        LIMIT $limit
         """
 
-        # Execute graph query
-        result = graph.query(chunk_find_query)
+        # Execute graph query with parameters
+        result = graph.query(chunk_find_query, params=params)
 
-        # Process results
         output = []
         seen_chunks = set()
         filenames = set()
@@ -453,17 +468,13 @@ def enhanced_chunk_finder(
             chunk_text = record["n.text"]
             filenames.add(record["n.fileName"])
             if chunk_text not in seen_chunks:
-                # Get the similarity score for the entity
-                entity_id = record["entity_id"]
-                similarity_score = similarity_scores.get(entity_id, 0.0)
-
                 output.append(
                     (
                         record["n.fileName"],
                         chunk_text,
                         record["n.page_number"],
                         record["n.position"],
-                        similarity_score,
+                        record["similarity"],
                     )
                 )
                 seen_chunks.add(chunk_text)
@@ -473,34 +484,3 @@ def enhanced_chunk_finder(
     except Exception as e:
         logging.error(f"Error in enhanced_chunk_finder: {str(e)}")
         raise
-
-
-def get_chunk_metadata(graph, chunk_ids: List[str]) -> Dict[str, Dict]:
-    """
-    Helper function to retrieve additional metadata for chunks.
-
-    Args:
-        graph: The graph database connection
-        chunk_ids: List of chunk IDs to query
-
-    Returns:
-        Dictionary mapping chunk IDs to their metadata
-    """
-    ids_clause = ", ".join([f"'{id}'" for id in chunk_ids])
-    metadata_query = f"""
-    MATCH (n:Chunk)
-    WHERE n.id IN [{ids_clause}]
-    RETURN n.id, n.fileName, n.page_number, n.position
-    """
-
-    result = graph.query(metadata_query)
-
-    metadata = {}
-    for record in result:
-        metadata[record["n.id"]] = {
-            "fileName": record["n.fileName"],
-            "page_number": record["n.page_number"],
-            "position": record["n.position"],
-        }
-
-    return metadata

@@ -6,6 +6,7 @@ pytest-cov==6.0.0
 pylint==3.3.4
 sentence_transformers==3.4.1
 ollama
+ipykernel
 openai==1.62.0
 python-dotenv
 pandas
@@ -27,3 +28,5 @@ oauth2client
 nltk
 rouge_score
 logging
+matplotlib
+seaborn
