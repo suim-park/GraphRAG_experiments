@@ -212,26 +212,53 @@ def get_concatenate_df(results_df, relevant_docs_df, topk):
 
 
 # Function to calculate accuracy, precision, and recall
-def calculate_metrics(reference, candidate):
-    reference_tokens = set(reference.split())
-    candidate_tokens = set(candidate.split())
+def calculate_metrics(reference, candidate, total_vocab):
+    """
+    Computes accuracy, precision, recall, and F1-score for document retrieval.
 
-    true_positives = len(reference_tokens & candidate_tokens)
-    false_positives = len(candidate_tokens - reference_tokens)
-    false_negatives = len(reference_tokens - candidate_tokens)
+    Parameters:
+        reference (str): A comma-separated string of relevant documents (ground truth).
+        candidate (str): A comma-separated string of retrieved documents.
+        total_vocab (set): A set of all possible document names.
 
-    accuracy = true_positives / (true_positives + false_positives + false_negatives)
+    Returns:
+        tuple: (accuracy, precision, recall, F1-score)
+    """
+
+    reference_tokens = set(reference.split(", "))  # Ground truth documents
+    candidate_tokens = set(candidate.split(", "))  # Retrieved documents
+
+    # Compute standard metrics
+    true_positives = len(reference_tokens & candidate_tokens)  # TP
+    false_positives = len(candidate_tokens - reference_tokens)  # FP
+    false_negatives = len(reference_tokens - candidate_tokens)  # FN
+
+    # Correct True Negatives (TN) Calculation
+    true_negatives = len(total_vocab - (reference_tokens | candidate_tokens))  # TN
+
+    # Accuracy: (TP + TN) / (TP + FP + FN + TN)
+    accuracy = (
+        (true_positives + true_negatives)
+        / (true_positives + false_positives + false_negatives + true_negatives)
+        if (true_positives + false_positives + false_negatives + true_negatives) > 0
+        else 0
+    )
+
+    # Precision: TP / (TP + FP)
     precision = (
         true_positives / (true_positives + false_positives)
         if (true_positives + false_positives) > 0
         else 0
     )
+
+    # Recall: TP / (TP + FN)
     recall = (
         true_positives / (true_positives + false_negatives)
         if (true_positives + false_negatives) > 0
         else 0
     )
 
+    # F1-score: 2 * (Precision * Recall) / (Precision + Recall)
     F_one = (
         2 * (precision * recall) / (precision + recall)
         if (precision + recall) > 0
@@ -241,15 +268,30 @@ def calculate_metrics(reference, candidate):
     return accuracy, precision, recall, F_one
 
 
-def apply_metrics(concatenated_df):
+def apply_metrics(concatenated_df, total_vocab):
+    """
+    Applies the calculate_metrics function to each row of the DataFrame.
+
+    Parameters:
+        concatenated_df (pd.DataFrame): DataFrame containing 'Docs' (ground truth) and 'Retrieved Files' (retrieved documents).
+        total_vocab (set): A set of all unique document identifiers.
+
+    Returns:
+        pd.DataFrame: The DataFrame with added accuracy, precision, recall, and F1-score.
+    """
     metrics = concatenated_df.apply(
-        lambda row: calculate_metrics(str(row["Docs"]), str(row["Retrieved Files"])),
+        lambda row: calculate_metrics(
+            str(row["Docs"]), str(row["Retrieved Files"]), total_vocab
+        ),
         axis=1,
     )
+
+    # Assign metrics to the DataFrame
     concatenated_df["Accuracy"] = metrics.apply(lambda metric: metric[0])
     concatenated_df["Precision"] = metrics.apply(lambda metric: metric[1])
     concatenated_df["Recall"] = metrics.apply(lambda metric: metric[2])
     concatenated_df["F1"] = metrics.apply(lambda metric: metric[3])
+
     return concatenated_df
 
 
