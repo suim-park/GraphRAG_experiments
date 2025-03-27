@@ -2,6 +2,7 @@ from libs import get_entities, embed_entity, vector_search, enhanced_chunk_finde
 from langchain_neo4j import Neo4jGraph
 from openai import OpenAI
 from typing import List, Tuple, Dict, Optional
+from conn import connect2Googlesheet
 import logging
 import yaml
 import os
@@ -269,7 +270,7 @@ def load_prompt_template(prompt_type: str) -> str:
 
 # synthesize response using OpenAI API
 def synthesize_response(
-    graph, query, method="hybrid", synth_type="stance_synthesis", model="gpt-3.5-turbo"
+    graph, query, method="hybrid", synth_type="stance_synthesis", model="gpt-4"
 ) -> Optional[Dict]:
     """...existing docstring..."""
 
@@ -295,13 +296,50 @@ def synthesize_response(
                 {"role": "system", "content": str(firstk_chunks_prompt)},
                 {"role": "user", "content": query},
             ],
-            temperature=0.6,
+            temperature=0.3,
         )
         return response
 
     except Exception as e:
         print(f"Error during API call: {e}")
         return None, None
+
+
+# Function to compute metrics per question
+def compute_per_question_metrics(df):
+    stance_categories = ["Support", "Against", "Neutral"]
+    results = []
+
+    for idx, row in df.iterrows():
+        q_num = row["Question Number"]
+        q_metrics = {"Question Number": q_num}
+
+        for stance in stance_categories:
+            pred_str = row.get(f"{stance}_x", "")
+            true_str = row.get(f"{stance}_y", "")
+
+            pred_set = set([x.strip() for x in pred_str.split(",") if x.strip()])
+            true_set = set([x.strip() for x in true_str.split(",") if x.strip()])
+
+            universe = pred_set.union(true_set)
+            TP = len(pred_set & true_set)
+            FP = len(pred_set - true_set)
+            FN = len(true_set - pred_set)
+            TN = len(universe) - (TP + FP + FN)
+
+            acc = (TP + TN) / len(universe) if len(universe) else 0
+            prec = TP / (TP + FP) if (TP + FP) else 0
+            rec = TP / (TP + FN) if (TP + FN) else 0
+            f1 = 2 * prec * rec / (prec + rec) if (prec + rec) else 0
+
+            q_metrics[f"{stance}_Accuracy"] = acc
+            q_metrics[f"{stance}_Precision"] = prec
+            q_metrics[f"{stance}_Recall"] = rec
+            q_metrics[f"{stance}_F1"] = f1
+
+        results.append(q_metrics)
+
+    return pd.DataFrame(results)
 
 
 if __name__ == "__main__":  # Fixed syntax error (== instead of =)
@@ -331,7 +369,7 @@ if __name__ == "__main__":  # Fixed syntax error (== instead of =)
         query=test_query,
         method="hybrid",
         synth_type="stance_synthesis",
-        model="gpt-3.5-turbo",
+        model="gpt-4",
     )
     if response_hybrid and hasattr(response_hybrid, "choices"):
         print("Hybrid Response:", response_hybrid.choices[0].message.content)

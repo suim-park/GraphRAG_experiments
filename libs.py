@@ -145,7 +145,7 @@ def get_entities(prompt: str, correction_context: str = " ") -> Tuple[List[str],
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": correction_context},
@@ -268,7 +268,7 @@ def context_builder(graph, query, method="hybrid"):
     return context
 
 
-def generate_response(graph, query, method="hybrid", model="gpt-4-turbo"):
+def generate_response(graph, query, method="hybrid", model="gpt-4o-mini"):
     """
     This function will utilizze ollama to generate a response while providing context
 
