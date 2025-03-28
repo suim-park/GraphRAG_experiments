@@ -2,7 +2,7 @@ from libs import get_entities, embed_entity, vector_search, enhanced_chunk_finde
 from langchain_neo4j import Neo4jGraph
 from openai import OpenAI
 from typing import List, Tuple, Dict, Optional
-from conn import connect2Googlesheet
+import pandas as pd
 import logging
 import yaml
 import os
@@ -305,41 +305,57 @@ def synthesize_response(
         return None, None
 
 
-# Function to compute metrics per question
-def compute_per_question_metrics(df):
-    stance_categories = ["Support", "Against", "Neutral"]
-    results = []
+def compute_accuracy_with_total_vocab(row, total_vocab_set):
+    # Predicted labels
+    pred_support = (
+        set(str(row["Support_x"]).split(", "))
+        if pd.notnull(row["Support_x"])
+        else set()
+    )
+    pred_against = (
+        set(str(row["Against_x"]).split(", "))
+        if pd.notnull(row["Against_x"])
+        else set()
+    )
+    pred_neutral = (
+        set(str(row["Neutral_x"]).split(", "))
+        if pd.notnull(row["Neutral_x"])
+        else set()
+    )
 
-    for idx, row in df.iterrows():
-        q_num = row["Question Number"]
-        q_metrics = {"Question Number": q_num}
+    # Ground truth labels
+    gt_support = (
+        set(str(row["Support_y"]).split(", "))
+        if pd.notnull(row["Support_y"])
+        else set()
+    )
+    gt_against = (
+        set(str(row["Against_y"]).split(", "))
+        if pd.notnull(row["Against_y"])
+        else set()
+    )
+    gt_neutral = (
+        set(str(row["Neutral_y"]).split(", "))
+        if pd.notnull(row["Neutral_y"])
+        else set()
+    )
 
-        for stance in stance_categories:
-            pred_str = row.get(f"{stance}_x", "")
-            true_str = row.get(f"{stance}_y", "")
+    # Correctly predicted papers (matching both label and paper name)
+    correct_support = pred_support & gt_support
+    correct_against = pred_against & gt_against
+    correct_neutral = pred_neutral & gt_neutral
 
-            pred_set = set([x.strip() for x in pred_str.split(",") if x.strip()])
-            true_set = set([x.strip() for x in true_str.split(",") if x.strip()])
+    correct_predictions = correct_support | correct_against | correct_neutral
 
-            universe = pred_set.union(true_set)
-            TP = len(pred_set & true_set)
-            FP = len(pred_set - true_set)
-            FN = len(true_set - pred_set)
-            TN = len(universe) - (TP + FP + FN)
+    # total_vocab_set: full set of all unique paper identifiers (provided externally)
+    total = len(total_vocab_set)
+    correct = len(correct_predictions)
 
-            acc = (TP + TN) / len(universe) if len(universe) else 0
-            prec = TP / (TP + FP) if (TP + FP) else 0
-            rec = TP / (TP + FN) if (TP + FN) else 0
-            f1 = 2 * prec * rec / (prec + rec) if (prec + rec) else 0
+    accuracy = correct / total if total > 0 else 0.0
 
-            q_metrics[f"{stance}_Accuracy"] = acc
-            q_metrics[f"{stance}_Precision"] = prec
-            q_metrics[f"{stance}_Recall"] = rec
-            q_metrics[f"{stance}_F1"] = f1
-
-        results.append(q_metrics)
-
-    return pd.DataFrame(results)
+    return pd.Series(
+        {"Correct Predictions": correct, "Total Papers": total, "Accuracy": accuracy}
+    )
 
 
 if __name__ == "__main__":  # Fixed syntax error (== instead of =)
