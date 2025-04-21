@@ -414,3 +414,30 @@ if __name__ == "__main__":  # Fixed syntax error (== instead of =)
     for file_info in chunks:
         print(f"\nFile: {file_info['filename']}")
         print(f"Number of chunks: {len(file_info['chunk_text'])}")
+
+
+def update_neutral_papers(row, total_vocab_set):
+    # Parse support and against papers into sets
+    support_set = (
+        set(str(row["Support"]).split(", ")) if pd.notnull(row["Support"]) else set()
+    )
+    against_set = (
+        set(str(row["Against"]).split(", ")) if pd.notnull(row["Against"]) else set()
+    )
+
+    # Remove empty strings and strip spaces
+    support_set = {p.strip() for p in support_set if p.strip() != ""}
+    against_set = {p.strip() for p in against_set if p.strip() != ""}
+
+    # Identify all labeled papers
+    labeled_papers = support_set.union(against_set)
+
+    # Calculate neutral set as the difference between total and labeled
+    neutral_set = total_vocab_set.difference(labeled_papers)
+
+    # Join into string format
+    row["Support"] = ", ".join(sorted(support_set))
+    row["Against"] = ", ".join(sorted(against_set))
+    row["Neutral"] = ", ".join(sorted(neutral_set))
+
+    return row
